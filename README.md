@@ -132,12 +132,6 @@ The background gradient is picked by mapping OWM weather condition codes (clear,
 
 ---
 
-## License
-
-MIT
-
----
-
 ## Author
 
 **Shobhit Jain**  
