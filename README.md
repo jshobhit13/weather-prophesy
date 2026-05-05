@@ -52,40 +52,6 @@ This app uses the [OpenWeatherMap API](https://openweathermap.org/api) (free tie
 3. Create a `.env` file in the root folder
 4. Add this line:
 
-```
-EXPO_PUBLIC_WEATHER_API_KEY=your_api_key_here
-```
-
-The `.env` file is listed in `.gitignore` and will not be pushed to GitHub. Anyone cloning this repo needs to create their own.
-
----
-
-## Project Structure
-
-```
-weather-prophesy/
-├── App.js
-├── app.json
-├── package.json
-├── babel.config.js
-├── .env
-├── .gitignore
-└── src/
-    ├── screens/
-    │   └── HomeScreen.js
-    ├── components/
-    │   ├── SearchBar.js
-    │   ├── CurrentWeather.js
-    │   ├── ForecastRow.js
-    │   └── EmptyState.js
-    ├── hooks/
-    │   └── useWeather.js
-    └── services/
-        ├── weatherApi.js
-        └── helpers.js
-```
-
----
 
 ## Built With
 
