@@ -2,7 +2,6 @@
 
 A dark-themed mobile weather app built with React Native and Expo. Search any city and get real-time current conditions along with a 5-day forecast.
 
-> Live demo coming soon | [GitHub Repo](https://github.com/jshobhit13/weather-prophesy)
 
 ---
 
