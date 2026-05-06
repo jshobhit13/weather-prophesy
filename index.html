@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weather Prophesy — Shobhit Jain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #06090f;
+    --surface: #0d1424;
+    --surface2: #111d33;
+    --border: rgba(99,155,255,0.12);
+    --accent: #4f8eff;
+    --accent2: #7eb8ff;
+    --rain: #a8d4ff;
+    --text: #dce8ff;
+    --muted: #5d7aab;
+    --storm: #1a2a4a;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ── RAIN ── */
+  .rain-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .drop {
+    position: absolute;
+    top: -80px;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--rain));
+    opacity: 0;
+    animation: fall linear infinite;
+  }
+
+  @keyframes fall {
+    0%   { transform: translateY(0);      opacity: 0; }
+    5%   { opacity: 0.35; }
+    95%  { opacity: 0.2; }
+    100% { transform: translateY(110vh);  opacity: 0; }
+  }
+
+  /* ── NAVBAR ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 2.5rem;
+    background: rgba(6,9,15,0.7);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    color: var(--accent2);
+  }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0 clamp(1.5rem, 8vw, 9rem);
+    z-index: 1;
+  }
+
+  /* Atmospheric glow */
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -5%;
+    width: 60vw;
+    height: 70vh;
+    background: radial-gradient(ellipse at center, rgba(30,70,160,0.25) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 5%;
+    right: 5%;
+    width: 40vw;
+    height: 40vh;
+    background: radial-gradient(ellipse at center, rgba(20,50,120,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.2s ease forwards;
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4.5rem, 13vw, 12rem);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    color: #fff;
+    opacity: 0;
+    animation: fadeUp 0.7s 0.35s ease forwards;
+  }
+  .hero-title span {
+    display: block;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    max-width: 480px;
+    margin-top: 2rem;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--muted);
+    opacity: 0;
+    animation: fadeUp 0.7s 0.5s ease forwards;
+  }
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.7s 0.65s ease forwards;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.8rem;
+    border-radius: 4px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.25s;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(79,142,255,0.35);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent2);
+    transform: translateY(-2px);
+  }
+
+  /* Phone mockup */
+  .hero-visual {
+    position: absolute;
+    right: clamp(2rem, 8vw, 8rem);
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    animation: floatIn 0.9s 0.7s ease forwards;
+  }
+  .phone {
+    width: 240px;
+    height: 480px;
+    background: linear-gradient(160deg, #0d1e3d 0%, #071024 100%);
+    border-radius: 36px;
+    border: 1.5px solid rgba(99,155,255,0.25);
+    box-shadow:
+      0 0 0 6px rgba(6,9,15,0.8),
+      0 0 0 7px rgba(99,155,255,0.1),
+      0 40px 80px rgba(0,0,20,0.8),
+      inset 0 0 60px rgba(30,70,160,0.15);
+    position: relative;
+    overflow: hidden;
+    animation: phoneFloat 4s ease-in-out infinite;
+  }
+  @keyframes phoneFloat {
+    0%, 100% { transform: translateY(0px) rotate(-2deg); }
+    50%       { transform: translateY(-12px) rotate(-2deg); }
+  }
+  .phone-notch {
+    width: 80px; height: 20px;
+    background: var(--bg);
+    border-radius: 0 0 14px 14px;
+    margin: 0 auto;
+    position: relative; z-index: 2;
+  }
+  .phone-screen {
+    padding: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .phone-city {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 0.2rem;
+  }
+  .phone-temp {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4.5rem;
+    color: #fff;
+    text-align: center;
+    line-height: 1;
+  }
+  .phone-condition {
+    font-size: 0.7rem;
+    color: var(--accent2);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+  .phone-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.3rem 0;
+  }
+  .phone-row {
+    display: flex;
+    justify-content: space-between;
+  }
+  .phone-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  .phone-stat-label {
+    font-size: 0.5rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+  .phone-stat-val {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2px;
+  }
+  .forecast-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+  }
+  .forecast-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .forecast-day-label {
+    font-size: 0.45rem;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .forecast-day-icon { font-size: 0.9rem; }
+  .forecast-day-hi { font-size: 0.55rem; font-weight: 600; color: var(--text); }
+  .forecast-day-lo { font-size: 0.5rem; color: var(--muted); }
+
+  /* Phone glow pulse */
+  .phone-glow {
+    position: absolute;
+    bottom: -30px; left: 50%;
+    transform: translateX(-50%);
+    width: 180px; height: 60px;
+    background: radial-gradient(ellipse, rgba(79,142,255,0.4), transparent 70%);
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.6; transform: translateX(-50%) scaleX(1); }
+    50%       { opacity: 1;   transform: translateX(-50%) scaleX(1.15); }
+  }
+
+  /* ── SECTION SHARED ── */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 6rem clamp(1.5rem, 8vw, 9rem);
+  }
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    letter-spacing: 0.04em;
+    color: #fff;
+    margin-bottom: 3rem;
+  }
+
+  /* ── FEATURES ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  .feature-card {
+    background: var(--surface);
+    padding: 2rem;
+    transition: background 0.25s;
+  }
+  .feature-card:hover { background: var(--surface2); }
+  .feature-icon {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .feature-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .feature-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── TECH STACK ── */
+  #stack { background: var(--surface); }
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  .stack-card {
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    background: var(--bg);
+    transition: border-color 0.25s, transform 0.25s;
+  }
+  .stack-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+  }
+  .stack-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+  .stack-ver {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  .stack-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── HOW IT WORKS ── */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+  @media (max-width: 768px) { .arch-grid { grid-template-columns: 1fr; } }
+  .arch-block h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    color: var(--accent2);
+    letter-spacing: 0.06em;
+    margin-bottom: 1rem;
+  }
+  .arch-block p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 1.2rem 1.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent2);
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+  .code-block .kw { color: #6eb4ff; }
+  .code-block .fn { color: #ffd070; }
+  .code-block .str { color: #81e6a0; }
+  .code-block .cm { color: #3d5a80; }
+
+  /* ── ROADMAP ── */
+  #roadmap { background: var(--surface); }
+  .roadmap-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 700px;
+  }
+  .roadmap-list li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.2rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 0.9rem;
+    color: var(--muted);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .roadmap-list li:hover { border-color: var(--accent); color: var(--text); }
+  .roadmap-list li .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    border: 1.5px solid var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── INSTALL ── */
+  .install-block {
+    max-width: 640px;
+  }
+  .install-block p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.8;
+    margin-bottom: 2rem;
+  }
+  .terminal {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .terminal-bar {
+    padding: 0.6rem 1rem;
+    background: #0a0a0a;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .t-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .terminal-body {
+    padding: 1.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 2;
+    color: #a0c8ff;
+  }
+  .terminal-body .prompt { color: var(--accent); user-select: none; }
+  .terminal-body .comment { color: #2d4a6b; }
+
+  /* ── FOOTER / CTA ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 6rem clamp(1.5rem, 8vw, 9rem) 4rem;
+    border-top: 1px solid var(--border);
+  }
+  .footer-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 7vw, 6rem);
+    letter-spacing: 0.04em;
+    color: #fff;
+    margin-bottom: 1.2rem;
+  }
+  .footer-heading span {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .footer-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 2.5rem;
+  }
+  .footer-author {
+    margin-top: 4rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  .footer-author a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+  .footer-author a:hover { text-decoration: underline; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes floatIn {
+    from { opacity: 0; transform: translateY(-40%) scale(0.95); }
+    to   { opacity: 1; transform: translateY(-50%) scale(1); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .hero-visual { display: none; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Rain -->
+<div class="rain-container" id="rain"></div>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">Weather Prophesy</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#stack">Stack</a>
+    <a href="#how">How it works</a>
+    <a href="#install">Install</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <p class="hero-tag">⚡ React Native · Expo · OpenWeatherMap</p>
+  <h1 class="hero-title">
+    Weather<br/>
+    <span>Prophesy</span>
+  </h1>
+  <p class="hero-sub">
+    A dark-themed mobile weather app that gives you real-time conditions and a 5-day forecast for any city on Earth — wrapped in a gradient that shifts with the sky.
+  </p>
+  <div class="hero-cta">
+    <a href="https://github.com/jshobhit13/weather-prophesy" target="_blank" class="btn btn-primary">
+      View on GitHub →
+    </a>
+    <a href="#features" class="btn btn-ghost">See features</a>
+  </div>
+
+  <!-- Phone mockup -->
+  <div class="hero-visual">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <p class="phone-city">New Delhi, IN</p>
+        <p class="phone-temp">28°</p>
+        <p class="phone-condition">Partly Cloudy</p>
+        <div class="phone-divider"></div>
+        <div class="phone-row">
+          <div class="phone-stat"><span class="phone-stat-label">Humidity</span><span class="phone-stat-val">71%</span></div>
+          <div class="phone-stat"><span class="phone-stat-label">Wind</span><span class="phone-stat-val">14 km/h</span></div>
+          <div class="phone-stat"><span class="phone-stat-label">Visibility</span><span class="phone-stat-val">8 km</span></div>
+        </div>
+        <div class="phone-row" style="margin-top:0.4rem">
+          <div class="phone-stat"><span class="phone-stat-label">Sunrise</span><span class="phone-stat-val">5:48</span></div>
+          <div class="phone-stat"><span class="phone-stat-label">Sunset</span><span class="phone-stat-val">19:12</span></div>
+          <div class="phone-stat"><span class="phone-stat-label">Feels</span><span class="phone-stat-val">31°</span></div>
+        </div>
+        <div class="phone-divider"></div>
+        <p style="font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2rem">5-Day Forecast</p>
+        <div class="forecast-row">
+          <div class="forecast-day"><span class="forecast-day-label">Mon</span><span class="forecast-day-icon">⛅</span><span class="forecast-day-hi">31°</span><span class="forecast-day-lo">22°</span></div>
+          <div class="forecast-day"><span class="forecast-day-label">Tue</span><span class="forecast-day-icon">🌧</span><span class="forecast-day-hi">27°</span><span class="forecast-day-lo">20°</span></div>
+          <div class="forecast-day"><span class="forecast-day-label">Wed</span><span class="forecast-day-icon">⛈</span><span class="forecast-day-hi">24°</span><span class="forecast-day-lo">19°</span></div>
+          <div class="forecast-day"><span class="forecast-day-label">Thu</span><span class="forecast-day-icon">🌤</span><span class="forecast-day-hi">30°</span><span class="forecast-day-lo">21°</span></div>
+          <div class="forecast-day"><span class="forecast-day-label">Fri</span><span class="forecast-day-icon">☀️</span><span class="forecast-day-hi">33°</span><span class="forecast-day-lo">23°</span></div>
+        </div>
+      </div>
+      <div class="phone-glow"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <p class="section-tag reveal">// capabilities</p>
+  <h2 class="section-title reveal">What it does</h2>
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <span class="feature-icon">🔍</span>
+      <p class="feature-name">City Search</p>
+      <p class="feature-desc">Look up live weather for any city worldwide with instant results.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌡️</span>
+      <p class="feature-name">Current Conditions</p>
+      <p class="feature-desc">Temperature, feels like, daily high & low — all in one glance.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💧</span>
+      <p class="feature-name">Detailed Metrics</p>
+      <p class="feature-desc">Humidity, wind speed & direction, and visibility data.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌅</span>
+      <p class="feature-name">Sunrise & Sunset</p>
+      <p class="feature-desc">Know exactly when the sun rises and sets for your searched city.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📅</span>
+      <p class="feature-name">5-Day Forecast</p>
+      <p class="feature-desc">Daily high & low outlook for the week ahead, aggregated from 3-hour intervals.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎨</span>
+      <p class="feature-name">Dynamic Gradients</p>
+      <p class="feature-desc">Background color shifts based on live weather — rain, clear, storm, snow and more.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔄</span>
+      <p class="feature-name">Pull to Refresh</p>
+      <p class="feature-desc">Swipe down to reload the latest data for your current city.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚠️</span>
+      <p class="feature-name">Error Handling</p>
+      <p class="feature-desc">Clear feedback for invalid city names or missing internet connection.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Stack -->
+<section id="stack">
+  <p class="section-tag reveal">// built with</p>
+  <h2 class="section-title reveal">Tech Stack</h2>
+  <div class="stack-grid reveal">
+    <div class="stack-card">
+      <p class="stack-name">React Native</p>
+      <p class="stack-ver">v0.74</p>
+      <p class="stack-desc">Cross-platform mobile UI framework powering every screen.</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-name">Expo</p>
+      <p class="stack-ver">v51</p>
+      <p class="stack-desc">Build toolchain for instant QR-code dev and easy deployment.</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-name">expo-linear-gradient</p>
+      <p class="stack-ver">latest</p>
+      <p class="stack-desc">Renders the weather-responsive background gradients.</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-name">safe-area-context</p>
+      <p class="stack-ver">latest</p>
+      <p class="stack-desc">Handles insets so UI stays clear of notches and home bars.</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-name">OpenWeatherMap</p>
+      <p class="stack-ver">Free Tier</p>
+      <p class="stack-desc">Real-time weather & 5-day forecast API powering all data.</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-name">Docker</p>
+      <p class="stack-ver">Compose v3.9</p>
+      <p class="stack-desc">Containerised dev server for zero-config team onboarding.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how">
+  <p class="section-tag reveal">// architecture</p>
+  <h2 class="section-title reveal">How it works</h2>
+  <div class="arch-grid">
+    <div class="arch-block reveal">
+      <h3>Single Custom Hook</h3>
+      <p>All API calls and state management live inside one custom hook — <code style="color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:0.85em">useWeather</code>. Components are purely presentational: they receive data as props and only handle rendering.</p>
+      <p>This separation keeps every component lean and the logic testable in isolation.</p>
+      <div class="code-block">
+<span class="cm">// hooks/useWeather.js</span>
+<span class="kw">const</span> <span class="fn">useWeather</span> = () => {
+  <span class="kw">const</span> [weather, setWeather] = useState(<span class="kw">null</span>);
+  <span class="kw">const</span> [forecast, setForecast] = useState([]);
+
+  <span class="kw">const</span> <span class="fn">fetchCity</span> = <span class="kw">async</span> (city) => {
+    <span class="cm">// /weather + /forecast</span>
+  };
+  <span class="kw">return</span> { weather, forecast, fetchCity };
+};
+      </div>
+    </div>
+    <div class="arch-block reveal">
+      <h3>Gradient Mapping</h3>
+      <p>OpenWeatherMap returns condition codes like <code style="color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:0.85em">800</code> (clear sky) or <code style="color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:0.85em">2xx</code> (thunderstorm). These codes are mapped to a color palette inside <code style="color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:0.85em">helpers.js</code> to produce the background gradient.</p>
+      <p>The 5-day forecast is aggregated from 3-hour interval data into daily highs and lows, also inside helpers.</p>
+      <div class="code-block">
+<span class="cm">// helpers.js</span>
+<span class="kw">export const</span> <span class="fn">getGradient</span> = (code) => {
+  <span class="kw">if</span> (code === <span class="str">800</span>) <span class="kw">return</span> CLEAR_COLORS;
+  <span class="kw">if</span> (code >= <span class="str">200</span> && code < <span class="str">300</span>)
+    <span class="kw">return</span> STORM_COLORS;
+  <span class="cm">// clouds, rain, snow…</span>
+};
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Roadmap -->
+<section id="roadmap">
+  <p class="section-tag reveal">// what's next</p>
+  <h2 class="section-title reveal">Roadmap</h2>
+  <ul class="roadmap-list reveal">
+    <li><span class="dot"></span>Web version with React + Vite, deployed on Vercel</li>
+    <li><span class="dot"></span>Auto-detect current location on app open</li>
+    <li><span class="dot"></span>Hourly forecast using OWM 3-hour interval data</li>
+    <li><span class="dot"></span>Save favourite cities with AsyncStorage</li>
+    <li><span class="dot"></span>UV index and air quality via One Call API</li>
+    <li><span class="dot"></span>Light and dark theme toggle</li>
+    <li><span class="dot"></span>Animated weather icons</li>
+    <li><span class="dot"></span>Offline caching so data loads without internet</li>
+  </ul>
+</section>
+
+<!-- Install -->
+<section id="install">
+  <p class="section-tag reveal">// get started</p>
+  <h2 class="section-title reveal">Run it locally</h2>
+  <div class="install-block reveal">
+    <p>Requires Node.js v18+ and the Expo Go app on your Android or iOS device. Add your OpenWeatherMap API key to a <code style="color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:0.9em">.env</code> file and you're good to go.</p>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="t-dot" style="background:#ff5f56"></div>
+        <div class="t-dot" style="background:#ffbd2e"></div>
+        <div class="t-dot" style="background:#27c93f"></div>
+      </div>
+      <div class="terminal-body">
+        <div><span class="prompt">$ </span>git clone https://github.com/jshobhit13/weather-prophesy.git</div>
+        <div><span class="prompt">$ </span>cd weather-prophesy</div>
+        <div><span class="prompt">$ </span>npm install</div>
+        <div style="color:#2d4a6b"># Add EXPO_PUBLIC_WEATHER_API_KEY to .env</div>
+        <div><span class="prompt">$ </span>npx expo start --clear</div>
+        <div style="color:#27c93f;margin-top:0.4rem">✓ Metro bundler running · scan QR with Expo Go</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p class="footer-heading">Built to <span>ship.</span></p>
+  <p class="footer-sub">Open source · Free tier friendly · Works on Android & iOS</p>
+  <a href="https://github.com/jshobhit13/weather-prophesy" target="_blank" class="btn btn-primary" style="display:inline-flex">
+    View Source on GitHub →
+  </a>
+  <p class="footer-author" style="margin-top:4rem">
+    Made by <a href="https://github.com/jshobhit13">Shobhit Jain</a> · B.Tech CS · Galgotias University
+  </p>
+</footer>
+
+<script>
+  // ── Generate rain drops
+  const rain = document.getElementById('rain');
+  for (let i = 0; i < 80; i++) {
+    const d = document.createElement('div');
+    d.className = 'drop';
+    const left  = Math.random() * 100;
+    const dur   = 0.6 + Math.random() * 1.2;
+    const delay = Math.random() * 3;
+    const h     = 40 + Math.random() * 60;
+    const op    = 0.1 + Math.random() * 0.25;
+    d.style.cssText = `left:${left}vw;height:${h}px;animation-duration:${dur}s;animation-delay:${delay}s;opacity:${op}`;
+    rain.appendChild(d);
+  }
+
+  // ── Scroll reveal
+  const els = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  els.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
